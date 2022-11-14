@@ -1,0 +1,79 @@
+/*
+ * check.c
+ *
+ *  Created on: Sep 30, 2022
+ *      Author: Admin
+ */
+
+#include "fsm_mode1.h"
+
+void fsm_automatic_mode1(){
+	if (timer_flag(1) == 1) {
+		updateClockBuffer();
+		setTimer(1, 1000);
+	}
+
+	if (timer_flag(2) == 1) {
+		update7SEG();
+		setTimer(2, 125);
+	}
+
+	switch(status){
+	case INIT:
+		status = MODE1;
+		break;
+
+	case MODE1:
+		status = AUTO_REDL_GREENP;
+		HAL_GPIO_WritePin(LR_GPIO_Port, LR_Pin, SET);
+		HAL_GPIO_WritePin(LA_GPIO_Port, LA_Pin, SET);
+		HAL_GPIO_WritePin(LG_GPIO_Port, LG_Pin, SET);
+		HAL_GPIO_WritePin(PR_GPIO_Port, PR_Pin, SET);
+		HAL_GPIO_WritePin(PA_GPIO_Port, PA_Pin, SET);
+		HAL_GPIO_WritePin(PG_GPIO_Port, PG_Pin, SET);
+		setTimer(0, GREEN * 1000);
+		break;
+
+	case AUTO_REDL_GREENP:
+		HAL_GPIO_WritePin(LR_GPIO_Port, LR_Pin, RESET);
+		HAL_GPIO_WritePin(PG_GPIO_Port, PG_Pin, RESET);
+		if (timer_flag(0) == 1) {
+			status = AUTO_REDL_AMBERP;
+			setTimer(0, AMBER * 1000);
+		}
+		break;
+
+	case AUTO_REDL_AMBERP:
+		HAL_GPIO_WritePin(LR_GPIO_Port, LR_Pin, RESET);
+		HAL_GPIO_WritePin(PA_GPIO_Port, PA_Pin, RESET);
+		HAL_GPIO_WritePin(PG_GPIO_Port, PG_Pin, SET);
+		if (timer_flag(0) == 1) {
+			status = AUTO_REDP_AMBERL;
+			setTimer(0, GREEN * 1000);
+		}
+		break;
+
+	case AUTO_REDP_GREENL:
+		HAL_GPIO_WritePin(LR_GPIO_Port, LR_Pin, SET);
+		HAL_GPIO_WritePin(PA_GPIO_Port, PA_Pin, SET);
+		HAL_GPIO_WritePin(PR_GPIO_Port, PR_Pin, SET);
+		HAL_GPIO_WritePin(LG_GPIO_Port, LG_Pin, SET);
+		if (timer_flag(0) == 1) {
+			status = AUTO_REDP_AMBERL;
+			setTimer(0, AMBER * 1000);
+		}
+		break;
+
+	case AUTO_REDL_GREENP:
+		HAL_GPIO_WritePin(LR_GPIO_Port, LR_Pin, RESET);
+		HAL_GPIO_WritePin(PG_GPIO_Port, PG_Pin, RESET);
+		if (timer_flag(0) == 1) {
+			status = AUTO_REDL_GREENP;
+			setTimer(0, GREEN * 1000);
+		}
+		break;
+
+	default:
+		break;
+	}
+}

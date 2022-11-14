@@ -1,0 +1,325 @@
+/*
+ * mode2.c
+ *
+ *  Created on: Nov 1, 2022
+ *      Author: dell
+ */
+
+#include "fsm_traffic_light.h"
+
+void fsm_traffic_light() {
+	switch(status){
+
+//----------------------------------------------------------------------------------------------
+// MODE INIT
+	case INIT:
+		status = MODE1;
+		break;
+
+//----------------------------------------------------------------------------------------------
+// MODE 1
+	case MODE1:
+		status = AUTO_REDL_GREENP;
+		HAL_GPIO_WritePin(LR_GPIO_Port, LR_Pin, SET);
+		HAL_GPIO_WritePin(LA_GPIO_Port, LA_Pin, SET);
+		HAL_GPIO_WritePin(LG_GPIO_Port, LG_Pin, SET);
+		HAL_GPIO_WritePin(PR_GPIO_Port, PR_Pin, SET);
+		HAL_GPIO_WritePin(PA_GPIO_Port, PA_Pin, SET);
+		HAL_GPIO_WritePin(PG_GPIO_Port, PG_Pin, SET);
+		clearTimer(3);
+		setTimer(0, GREEN * 1000);
+		setTimer(1, 1000);
+		setTimer(2, 250);
+		index_led = 0;
+		break;
+
+	case AUTO_REDL_GREENP:
+		HAL_GPIO_WritePin(LR_GPIO_Port, LR_Pin, RESET);
+		HAL_GPIO_WritePin(PG_GPIO_Port, PG_Pin, RESET);
+		if (timer_flag[0] == 1) {
+			status = AUTO_REDL_AMBERP;
+			setTimer(0, AMBER * 1000);
+		}
+		if (timer_flag[1] == 1) {
+			updateClockBufferMode1();
+			setTimer(1, 1000);
+		}
+		if (timer_flag[2] == 1) {
+			update7SEG(index_led);
+			setTimer(2, 250);
+		}
+		if (isButtonPressed(0) == 1) {
+			status = MODE2;
+		}
+		break;
+
+	case AUTO_REDL_AMBERP:
+		HAL_GPIO_WritePin(PA_GPIO_Port, PA_Pin, RESET);
+		HAL_GPIO_WritePin(PG_GPIO_Port, PG_Pin, SET);
+		if (timer_flag[0] == 1) {
+			status = AUTO_REDP_AMBERL;
+			setTimer(0, GREEN * 1000);
+		}
+		if (timer_flag[1] == 1) {
+			updateClockBufferMode1();
+			setTimer(1, 1000);
+		}
+		if (timer_flag[2] == 1) {
+			update7SEG(index_led);
+			setTimer(2, 250);
+		}
+		if (isButtonPressed(0) == 1) {
+			status = MODE2;
+		}
+		break;
+
+	case AUTO_REDP_GREENL:
+		HAL_GPIO_WritePin(LR_GPIO_Port, LR_Pin, SET);
+		HAL_GPIO_WritePin(PA_GPIO_Port, PA_Pin, SET);
+		HAL_GPIO_WritePin(PR_GPIO_Port, PR_Pin, RESET);
+		HAL_GPIO_WritePin(LG_GPIO_Port, LG_Pin, RESET);
+		if (timer_flag[0] == 1) {
+			status = AUTO_REDP_AMBERL;
+			setTimer(0, AMBER * 1000);
+		}
+		if (timer_flag[1] == 1) {
+			updateClockBufferMode1();
+			setTimer(1, 1000);
+		}
+		if (timer_flag[2] == 1) {
+			update7SEG(index_led);
+			setTimer(2, 250);
+		}
+		if (isButtonPressed(0) == 1) {
+			status = MODE2;
+		}
+		break;
+
+	case AUTO_REDP_AMBERL:
+		HAL_GPIO_WritePin(PG_GPIO_Port, PG_Pin, SET);
+		HAL_GPIO_WritePin(PA_GPIO_Port, PA_Pin, RESET);
+		if (timer_flag[0] == 1) {
+			status = AUTO_REDL_GREENP;
+			setTimer(0, GREEN * 1000);
+		}
+		if (timer_flag[1] == 1) {
+			updateClockBufferMode1();
+			setTimer(1, 1000);
+		}
+		if (timer_flag[2] == 1) {
+			update7SEG(index_led);
+			setTimer(2, 250);
+		}
+		if (isButtonPressed(0) == 1) {
+			status = MODE2;
+		}
+		break;
+
+//----------------------------------------------------------------------------------------------
+// MODE 2
+	case MODE2:
+		HAL_GPIO_WritePin(LR_GPIO_Port, LR_Pin, RESET);
+		HAL_GPIO_WritePin(PR_GPIO_Port, PR_Pin, RESET);
+		HAL_GPIO_WritePin(LA_GPIO_Port, LA_Pin, SET);
+		HAL_GPIO_WritePin(PA_GPIO_Port, PA_Pin, SET);
+		HAL_GPIO_WritePin(LG_GPIO_Port, LG_Pin, SET);
+		HAL_GPIO_WritePin(PG_GPIO_Port, PG_Pin, SET);
+		clearTimer(0);
+		clearTimer(1);
+		setTimer(2, 250);
+		setTimer(3, 500);
+		status = AUTO_RED;
+		index_led = 0;
+		break;
+
+	case AUTO_RED:
+		if (timer_flag[3] == 1) {
+			setTimer(3, 500);
+			HAL_GPIO_TogglePin(LR_GPIO_Port, LR_Pin);
+			HAL_GPIO_TogglePin(PR_GPIO_Port, PR_Pin);
+		}
+
+		if (timer_flag[2] == 1) {
+			setTimer(2, 250);
+			updateClockBufferMode2();
+			update7SEG(index_led);
+		}
+
+		if (isButtonPressed(0) == 1) {
+			status = MODE3;
+		}
+
+		if (isButtonPressed(1) == 1) {
+			status = INC_RED;
+			if (RED >= 99) RED = AMBER + 1;
+			else RED++;
+		}
+		break;
+
+	case INC_RED:
+		if (timer_flag[3] == 1) {
+			setTimer(3, 500);
+			HAL_GPIO_TogglePin(LR_GPIO_Port, LR_Pin);
+			HAL_GPIO_TogglePin(PR_GPIO_Port, PR_Pin);
+		}
+
+		if (timer_flag[2] == 1) {
+			setTimer(2, 250);
+			updateClockBufferMode2();
+			update7SEG(index_led);
+		}
+
+		if (isButtonPressed(1) == 1) {
+			if (RED >= 99) RED = AMBER + 1;
+			else RED++;
+		}
+
+		if (isButtonPressed(2) == 1) {
+			status = AUTO_RED;
+			GREEN = RED - AMBER;
+		}
+		break;
+
+
+
+
+//----------------------------------------------------------------------------------------------
+// MODE 3
+	case MODE3:
+		HAL_GPIO_WritePin(LR_GPIO_Port, LR_Pin, SET);
+		HAL_GPIO_WritePin(PR_GPIO_Port, PR_Pin, SET);
+		HAL_GPIO_WritePin(LA_GPIO_Port, LA_Pin, RESET);
+		HAL_GPIO_WritePin(PA_GPIO_Port, PA_Pin, RESET);
+		HAL_GPIO_WritePin(LG_GPIO_Port, LG_Pin, SET);
+		HAL_GPIO_WritePin(PG_GPIO_Port, PG_Pin, SET);
+		clearTimer(0);
+		clearTimer(1);
+		setTimer(2, 250);
+		setTimer(3, 500);
+		status = AUTO_AMBER;
+		index_led = 0;
+		break;
+
+	case AUTO_AMBER:
+		if (timer_flag[3] == 1) {
+			setTimer(3, 500);
+			HAL_GPIO_TogglePin(LA_GPIO_Port, LA_Pin);
+			HAL_GPIO_TogglePin(PA_GPIO_Port, PA_Pin);
+		}
+
+		if (timer_flag[2] == 1) {
+			setTimer(2, 250);
+			updateClockBufferMode3();
+			update7SEG(index_led);
+		}
+
+		if (isButtonPressed(0) == 1) {
+			status = MODE4;
+		}
+
+		if (isButtonPressed(1) == 1) {
+			status = INC_AMBER;
+			if (AMBER >= 5) AMBER = 1;
+			else AMBER++;
+		}
+		break;
+
+	case INC_AMBER:
+		if (timer_flag[3] == 1) {
+			setTimer(3, 500);
+			HAL_GPIO_TogglePin(LA_GPIO_Port, LA_Pin);
+			HAL_GPIO_TogglePin(PA_GPIO_Port, PA_Pin);
+		}
+
+		if (timer_flag[2] == 1) {
+			setTimer(2, 250);
+			updateClockBufferMode3();
+			update7SEG(index_led);
+		}
+
+		if (isButtonPressed(1) == 1) {
+			if (AMBER >= 5) AMBER = 1;
+			else AMBER++;
+		}
+
+		if (isButtonPressed(2) == 1) {
+			status = AUTO_AMBER;
+			if (RED <= AMBER) RED = AMBER + 1;
+			GREEN = RED - AMBER;
+		}
+		break;
+
+
+
+
+//----------------------------------------------------------------------------------------------
+// MODE 4
+	case MODE4:
+		HAL_GPIO_WritePin(LR_GPIO_Port, LR_Pin, SET);
+		HAL_GPIO_WritePin(PR_GPIO_Port, PR_Pin, SET);
+		HAL_GPIO_WritePin(LA_GPIO_Port, LA_Pin, SET);
+		HAL_GPIO_WritePin(PA_GPIO_Port, PA_Pin, SET);
+		HAL_GPIO_WritePin(LG_GPIO_Port, LG_Pin, RESET);
+		HAL_GPIO_WritePin(PG_GPIO_Port, PG_Pin, RESET);
+		clearTimer(0);
+		clearTimer(1);
+		setTimer(2, 250);
+		setTimer(3, 500);
+		status = AUTO_GREEN;
+		index_led = 0;
+		break;
+
+	case AUTO_GREEN:
+		if (timer_flag[3] == 1) {
+			setTimer(3, 500);
+			HAL_GPIO_TogglePin(LG_GPIO_Port, LG_Pin);
+			HAL_GPIO_TogglePin(PG_GPIO_Port, PG_Pin);
+		}
+
+		if (timer_flag[2] == 1) {
+			setTimer(2, 250);
+			updateClockBufferMode4();
+			update7SEG(index_led);
+		}
+
+		if (isButtonPressed(0) == 1) {
+			status = MODE1;
+		}
+
+		if (isButtonPressed(1) == 1) {
+			status = INC_GREEN;
+			if (GREEN >= RED - AMBER) GREEN = 1;
+			else GREEN++;
+		}
+		break;
+
+	case INC_GREEN:
+		if (timer_flag[3] == 1) {
+			setTimer(3, 500);
+			HAL_GPIO_TogglePin(LG_GPIO_Port, LG_Pin);
+			HAL_GPIO_TogglePin(PG_GPIO_Port, PG_Pin);
+		}
+
+		if (timer_flag[2] == 1) {
+			setTimer(2, 250);
+			updateClockBufferMode4();
+			update7SEG(index_led);
+		}
+
+		if (isButtonPressed(1) == 1) {
+			if (GREEN >= RED - AMBER) GREEN = AMBER + 1;
+			else GREEN++;
+		}
+
+		if (isButtonPressed(2) == 1) {
+			status = AUTO_GREEN;
+			RED = GREEN + AMBER;
+		}
+		break;
+
+//--------------------------------------------------------------------------------------
+// Default
+	default:
+		break;
+	}
+}

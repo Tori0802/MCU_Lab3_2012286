@@ -1,0 +1,45 @@
+/*
+ * mode2.c
+ *
+ *  Created on: Nov 1, 2022
+ *      Author: dell
+ */
+
+#include <fsm_mode2.h>
+
+int new_red;
+
+void initmode2() {
+	new_red = RED;
+	displayP(new_red);
+	displayL(2);
+
+	HAL_GPIO_WritePin(LR_GPIO_Port, LR_Pin, RESET);
+	HAL_GPIO_WritePin(LA_GPIO_Port, LA_Pin, SET);
+	HAL_GPIO_WritePin(LG_GPIO_Port, LG_Pin, SET);
+	HAL_GPIO_WritePin(PR_GPIO_Port, PR_Pin, RESET);
+	HAL_GPIO_WritePin(PA_GPIO_Port, PA_Pin, SET);
+	HAL_GPIO_WritePin(PG_GPIO_Port, PG_Pin, SET);
+}
+
+void runmode2() {
+	if (timer2_flag == 1) {
+		timer2_flag = 0;
+		setTimer(250);
+		HAL_GPIO_TogglePin(LR_GPIO_Port, LR_Pin);
+		HAL_GPIO_TogglePin(PR_GPIO_Port, PR_Pin);
+	}
+
+	if (isButton2Pressed() == 1) {
+		if (new_red == 99) new_red = 1;
+		else new_red++;
+		displayP(new_red);
+	}
+
+	if (isButton3Pressed() == 1) {
+		displayP(new_red);
+		RED = new_red;
+		GREEN = RED - AMBER;
+	}
+}
+

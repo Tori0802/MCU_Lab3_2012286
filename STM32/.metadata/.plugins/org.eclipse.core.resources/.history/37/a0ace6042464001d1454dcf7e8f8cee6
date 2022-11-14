@@ -1,0 +1,24 @@
+ /*
+ * software_timer.h
+ *
+ *  Created on: Sep 30, 2022
+ *      Author: Admin
+ */
+
+#ifndef INC_SOFTWARE_TIMER_H_
+#define INC_SOFTWARE_TIMER_H_
+
+#include "main.c"
+
+// Time cycle
+#define TIME_CYCLE 		1/(8e6/(htim2.Init.Prescaler + 1)/(htim2.Init.Period + 1)) * 1000
+
+#define NUM_OF_TIMERS 	4  				// Number of Timers to use
+
+extern int timer_flag[NUM_OF_TIMERS];
+
+void setTimer(int index, int duration);
+void clearTimer(int index);
+void timerRun();
+
+#endif /* INC_SOFTWARE_TIMER_H_ */

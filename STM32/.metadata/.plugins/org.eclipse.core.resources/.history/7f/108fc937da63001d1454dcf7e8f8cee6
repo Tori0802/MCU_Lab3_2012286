@@ -1,0 +1,21 @@
+/*
+ * mode2.h
+ *
+ *  Created on: Nov 1, 2022
+ *      Author: dell
+ */
+
+#ifndef INC_FSM_MODE2_H_
+#define INC_FSM_MODE2_H_
+
+#include "main.h"
+#include "button.h"
+#include "global.h"
+#include "software_timer.h"
+
+extern int new_red;
+
+void initmode2();
+void runmode2();
+
+#endif /* INC_FSM_MODE2_H_ */
